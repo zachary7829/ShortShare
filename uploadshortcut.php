@@ -76,19 +76,53 @@ if (isset($_POST['SHORTCUT_NAME'], $_POST['SHORTCUT_VERSION'], $_POST['SHORTCUT_
 	echo "<br>Uploading $version of $name to ShortShare...</br>";
   echo "<br>iCloud Link of $name is $icloudlink...</br>";
   $result = '{"Shortcut Name":"' . $name . '","Shortcut Version":"' . $version . '","Shortcut iCloud Link":"' . $icloudlink . '","Username":"' . $username . '"}';
-  $filename = 'shortcuts/data.json';
-  if (is_writable($filename)) {
-    if (!$fp = fopen($filename, 'a')) {
-      echo "Cannot open file ($filename)";
-      exit;
-    }
+  if (file_exists("accounts/" . $username . "/" . $name . "/" . "/versions.json")) {
+    $fh = fopen("accounts/" . $username . "/" . $name . "/" . "/versions.json", 'r+');
+    $stat = fstat($fh);
+    ftruncate($fh, $stat['size']-2);
+    fclose($fh);
+    $fh = fopen("accounts/" . $username . "/" . $name . "/" . "/versions.json", 'a');
+    $result = ',"' . $version . '"]}';
+    fwrite($fh, $result);
+    fclose($fh);
+    mkdir("accounts/" . $username . "/" . $name . "/" . $version);
+    $fp = fopen("accounts/" . $username . "/" . $name . "/" . $version . "/" . "/data.json","a");
+    $result = '{"Shortcut Name":"' . $name . '","Shortcut Version":"' . $version . '","Shortcut iCloud Link":"' . $icloudlink . '","Username":"' . $username . '"}';
     fwrite($fp, $result);
     fclose($fp);
+    echo '<br>Your shortcut has been updated!</br>';
+  } else {
+    mkdir("accounts/" . $username . "/" . $name);
+  mkdir("accounts/" . $username . "/" . $name . "/" . $version); //remember to filter for ./ in usernames latr
+  $fp = fopen("accounts/" . $username . "/" . $name . "/" . $version . "/data.json","a");
+  fwrite($fp, $result);
+  fclose($fp);
+  $fp = fopen("accounts/" . $username . "/" . $name . "/versions.json","a");
+  $result = '{"Versions:"["' . $version . '"]}';
+  fwrite($fp, $result);
+  fclose($fp);
+  if (file_exists("accounts/" . $username . "/" . "data.json")) {
+    $fh = fopen("accounts/" . $username . "/" . "data.json", 'r+');
+    $stat = fstat($fh);
+    ftruncate($fh, $stat['size']-2);
+    fclose($fh);
+    $fh = fopen("accounts/" . $username . "/data.json", 'a');
+    $result = ',"' . $name . '"]}';
+    fwrite($fh, $result);
+    fclose($fh);
+    echo 'Your shortcut has been created and uploaded!';
+  } else {
+    $fp = fopen("accounts/" . $username . "/" . "data.json","a");
+    $result = '{"Shortcuts":["' . $name . '"]}';
+    fwrite($fp, $result);
+    fclose($fp);
+    echo 'Your first shortcut has been created and uploaded!';
+  }
   }
 } else {
 	echo 'You need to provide your shortcut name, shortcut version, and/or shortcut icloud link.';
 }
-echo 'Hello There!'
+echo 'Hello There, ' . $username . '!';
 ?>
   </body>
 </html>
